@@ -44,9 +44,8 @@ export default class Main extends Component {
     const { newRepo, repositories } = this.state;
 
     try {
-      const existsRepo = repositories.find(newRepo);
-      debugger;
-      if (existsRepo) {
+      const existsRepo = repositories.filter(r => r.name === newRepo);
+      if (existsRepo.length > 0) {
         throw new Error('Duplicated repo');
       }
 
