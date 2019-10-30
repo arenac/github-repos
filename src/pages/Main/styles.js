@@ -12,6 +12,14 @@ export const Form = styled.form`
     border-radius: 4px;
     font-size: 16px;
   }
+
+  ${props =>
+    props.requestFailed &&
+    css`
+      input {
+        border: 1px solid #fc0303;
+      }
+    `}
 `;
 
 const rotate = keyframes`
