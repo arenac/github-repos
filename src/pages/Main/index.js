@@ -12,6 +12,7 @@ export default class Main extends Component {
     newRepo: '',
     repositories: [],
     loading: false,
+    requestFailed: false,
   };
 
   // load data from local storage
@@ -42,21 +43,32 @@ export default class Main extends Component {
 
     const { newRepo, repositories } = this.state;
 
-    const response = await api.get(`/repos/${newRepo}`);
+    try {
+      const existsRepo = repositories.filter(r => r.name === newRepo);
+      if (existsRepo.length > 0) {
+        throw new Error('Duplicated repo');
+      }
 
-    const data = {
-      name: response.data.full_name,
-    };
+      const response = await api.get(`/repos/${newRepo}`);
 
-    this.setState({
-      repositories: [...repositories, data],
-      newRepo: '',
-      loading: false,
-    });
+      const data = {
+        name: response.data.full_name,
+      };
+
+      this.setState({
+        repositories: [...repositories, data],
+        newRepo: '',
+        requestFailed: false,
+      });
+    } catch (err) {
+      this.setState({ requestFailed: true });
+    }
+
+    this.setState({ loading: false });
   };
 
   render() {
-    const { newRepo, loading, repositories } = this.state;
+    const { newRepo, loading, repositories, requestFailed } = this.state;
     return (
       <Container>
         <h1>
@@ -64,7 +76,7 @@ export default class Main extends Component {
           Repositories
         </h1>
 
-        <Form onSubmit={this.handleSubmit}>
+        <Form onSubmit={this.handleSubmit} requestFailed={requestFailed}>
           <input
             type="text"
             placeholder="Add reposotory"

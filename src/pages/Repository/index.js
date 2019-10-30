@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 
 import api from '../../services/api';
 import Container from '../../components/Container';
-import { Loading, Owner, IssueList } from './styles';
+import { Loading, Owner, IssueList, Filter } from './styles';
 
 export default class Repository extends Component {
   static propTypes = {
@@ -19,10 +19,23 @@ export default class Repository extends Component {
     repository: {},
     issues: [],
     loading: true,
+    issueState: 'all',
   };
 
-  async componentDidMount() {
+  componentDidMount() {
+    this.fetchIssues();
+  }
+
+  hadleIssueState = e => {
+    if (e.target.checked) {
+      this.setState({ issueState: e.target.value });
+      this.fetchIssues();
+    }
+  };
+
+  async fetchIssues() {
     const { match } = this.props;
+    const { issueState } = this.state;
 
     const repoName = decodeURIComponent(match.params.repository);
 
@@ -30,7 +43,7 @@ export default class Repository extends Component {
       api.get(`/repos/${repoName}`),
       api.get(`/repos/${repoName}/issues`, {
         params: {
-          state: 'open',
+          state: issueState,
           per_page: 5,
         },
       }),
@@ -44,7 +57,7 @@ export default class Repository extends Component {
   }
 
   render() {
-    const { repository, issues, loading } = this.state;
+    const { repository, issues, loading, issueState } = this.state;
     if (loading) {
       return <Loading>Carregando</Loading>;
     }
@@ -56,6 +69,39 @@ export default class Repository extends Component {
           <h1>{repository.name}</h1>
           <p>{repository.description}</p>
         </Owner>
+
+        <Filter>
+          <li>
+            <input
+              type="radio"
+              name="state"
+              value="all"
+              checked={issueState === 'all'}
+              onChange={this.hadleIssueState}
+            />
+            <label>All</label>
+          </li>
+          <li>
+            <input
+              type="radio"
+              name="state"
+              value="open"
+              checked={issueState === 'open'}
+              onChange={this.hadleIssueState}
+            />
+            <label>Open</label>
+          </li>
+          <li>
+            <input
+              type="radio"
+              name="state"
+              value="closed"
+              checked={issueState === 'closed'}
+              onChange={this.hadleIssueState}
+            />
+            <label>Closed</label>
+          </li>
+        </Filter>
 
         <IssueList>
           {issues.map(issue => (
