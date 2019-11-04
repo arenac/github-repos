@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 
 import api from '../../services/api';
 import Container from '../../components/Container';
-import { Loading, Owner, IssueList, Filter } from './styles';
+import { Loading, Owner, IssueList, Filter, PageActions } from './styles';
 
 export default class Repository extends Component {
   static propTypes = {
@@ -20,6 +20,7 @@ export default class Repository extends Component {
     issues: [],
     loading: true,
     issueState: 'all',
+    page: 1,
   };
 
   componentDidMount() {
@@ -28,12 +29,13 @@ export default class Repository extends Component {
 
   hadleIssueState = e => {
     if (e.target.checked) {
-      this.setState({ issueState: e.target.value });
+      this.setState({ issueState: e.target.value, page: 1 });
       this.fetchIssues();
+      this.loadIssues();
     }
   };
 
-  async fetchIssues() {
+  fetchIssues = async () => {
     const { match } = this.props;
     const { issueState } = this.state;
 
@@ -45,6 +47,7 @@ export default class Repository extends Component {
         params: {
           state: issueState,
           per_page: 5,
+          page: 1,
         },
       }),
     ]);
@@ -54,10 +57,35 @@ export default class Repository extends Component {
       repository: repository.data,
       issues: issues.data,
     });
-  }
+  };
+
+  loadIssues = async () => {
+    const { match } = this.props;
+    const { issueState, page } = this.state;
+
+    const repoName = decodeURIComponent(match.params.repository);
+
+    const response = await api.get(`/repos/${repoName}/issues`, {
+      params: {
+        state: issueState,
+        per_page: 5,
+        page,
+      },
+    });
+
+    this.setState({ issues: response.data });
+  };
+
+  handlePage = async action => {
+    const { page } = this.state;
+    await this.setState({
+      page: action === 'back' ? page - 1 : page + 1,
+    });
+    this.loadIssues();
+  };
 
   render() {
-    const { repository, issues, loading, issueState } = this.state;
+    const { repository, issues, loading, issueState, page } = this.state;
     if (loading) {
       return <Loading>Carregando</Loading>;
     }
@@ -119,6 +147,19 @@ export default class Repository extends Component {
             </li>
           ))}
         </IssueList>
+        <PageActions>
+          <button
+            type="button"
+            disabled={page < 2}
+            onClick={() => this.handlePage('back')}
+          >
+            Anterior
+          </button>
+          <span>Página {page}</span>
+          <button type="button" onClick={() => this.handlePage('next')}>
+            Próximo
+          </button>
+        </PageActions>
       </Container>
     );
   }
